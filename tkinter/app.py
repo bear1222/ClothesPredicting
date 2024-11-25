@@ -2,13 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 from tkinter import Label, Button, Frame
 from PIL import Image, ImageTk
-import numpy as np
-
-def preprocess_image(image_path):
-    """Preprocess the image to match the input shape of the model."""
-    image = Image.open(image_path).resize((224, 224))  # Adjust size to your model's requirement
-    image_array = np.array(image) / 255.0  # Normalize the image
-    return np.expand_dims(image_array, axis=0)  # Add batch dimension
+import predict  # Import the prediction module to use its functions
 
 def reset_state():
     """Reset the application to its initial state."""
@@ -21,8 +15,17 @@ def predict_price_action():
     """Perform prediction and update the UI with results."""
     # Disable the button while predicting
     button.config(text="Predicting...", state="disabled")
-    # Replace the next line with your model prediction logic
-    price_label.config(text="Predicted Price: $123.45")  # Example predicted price
+    
+    # Get the file path from the image label
+    image_path = image_label.image_path
+    
+    # Call the prediction function from predict.py
+    predicted_price = predict.predict_price(image_path)
+    
+    # Display the predicted price
+    price_label.config(text=f"Predicted Price: ${predicted_price:.2f}")
+
+    # Enable the "Next" button after prediction
     button.config(text="Next", bg="#e67e22", command=reset_state, state="normal")  # Change to next button
 
 def upload_image():
@@ -40,6 +43,7 @@ def upload_image():
     img_tk = ImageTk.PhotoImage(img)
     image_label.config(image=img_tk, text="")  # Clear previous text
     image_label.image = img_tk
+    image_label.image_path = file_path  # Store the file path
 
     # Enable the button to start prediction
     button.config(text="Predict", bg="#27ae60", command=predict_price_action, state="normal")  # Change to predict button
