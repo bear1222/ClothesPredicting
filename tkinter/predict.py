@@ -1,57 +1,107 @@
 import numpy as np
-from PIL import Image
+import pandas as pd
+import os
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
-import joblib
+from joblib import load
+import pickle
 
-# Load the Keras models for feature extraction (24 models for image features)
-feature_models = []
-for i in range(24):
-    try:
-        model = load_model(f'../models/feature_model_{i}.keras')
-        feature_models.append(model)
-        print(f"Loaded model {i}")
-    except:
-        feature_models.append(None)
-
-# Load the joblib model for price prediction
-price_model = joblib.load('../models/random_forest_model.pkl')
-# price_model = joblib.load('random_forest_model.joblib')
-
+model_dir = "../models"
 img_height, img_width = 180, 180
 
-def preprocess_image(filepath):
+feature_list = list(pd.read_csv("feature_list.csv")["name"])
+# print(len(feature_list))
+brand_list = list(pd.read_csv("brand_list.csv")["brand"])
+# print(brand_list)
+
+feature_model = [None] * len(feature_list)
+
+for i in range(len(feature_list)):
+    try:
+        feature_model[i] = load_model(os.path.join(model_dir, f"model_feature_{i}_0.keras"))
+    except Exception as e:
+        print(f"please add model_feature_{i}_0.keras to the models folder")
+        pass
+
+try:
+    brand_model = load_model(os.path.join(model_dir, f"model_brand_0.keras"))
+except Exception as e:
+    print("please add model_brand_0.keras to the models folder")
+try:
+    length_model = load_model(os.path.join(model_dir, f"model_length_0.keras"))
+except Exception as e:
+    print("please add model_length_0.keras to the models folder")
+try:
+    nn_model = load_model(os.path.join(model_dir, f"model_prediction.keras"))
+except Exception as e:
+    print("please add model_prediction.keras to the models folder")
+try:
+    rf_model = load(os.path.join(model_dir, "random_forest_model.joblib"))
+except Exception as e:
+    try:
+        with open(os.path.join(model_dir, "random_forest_model.pkl"), 'rb') as f:
+            rf_model = pickle.load(f)
+    except Exception as e:
+        print("please add random_forest_model.joblib or .pkl to the models folder")
+
+def load_and_preprocess_image(filepath):
     """Preprocess the image to match the input shape of the image models."""
     img = load_img(filepath, target_size=(img_height, img_width))
     img_array = img_to_array(img) / 255.0  # Normalize the image
     return img_array
 
-def generate_feature_tags(image_path):
-    """Generate feature tags (X) from the image using the feature extraction models."""
-    feature_tags = []
-    
-    # Process the image input for the image models
-    image_data = preprocess_image(image_path)
-    
-    # Get features from image models (24 Keras models)
-    for i in range(24):  # Assuming the first 24 models work with images
-        if not feature_models[i]:
-            feature_tags.append(0)
-            continue
-        feature = feature_models[i].predict(image_data)
-        # if feature.ndim > 1:
-        #     feature = feature.flatten()
-        feature_tags.append(feature)
-    
-    # Combine all the feature tags into a single vector (1D array)
-    return feature_tags
+def predict_one_feature(test_image, feature_id):
+    try:
+        # if feature_model[feature_id] is None:
+        #     feature_model[feature_id] = load_model(os.path.join(model_dir, f"model_{feature_id}.keras"))
+        test_image = np.expand_dims(test_image, axis=0)
+        prediction = feature_model[feature_id].predict(test_image, verbose=0)
+        return 1 if prediction[0][0] > 0.5 else 0
+    except Exception as e:
+        print(feature_id)
+        return 0
 
-def predict_price(image_path):
-    """Predict the price from an image."""
-    # Generate feature tags using the feature models
-    feature_tags = generate_feature_tags(image_path)
-    
-    # Predict the price using the joblib model
-    predicted_price = price_model.predict([feature_tags])
+def predict_brand(test_image):
+    try:
+        test_image = np.expand_dims(test_image, axis=0)
+        prediction = brand_model.predict(test_image, verbose=0)
+        predicted_classes = np.argmax(prediction, axis=1)
+        brand = brand_list[int(predicted_classes)]
+        # print("predict brand:", brand)
+        return predicted_classes
+    except Exception as e:
+        print(e)
+        pass
 
-    return predicted_price
+
+def predict_length(test_image):
+    try:
+        test_image = np.expand_dims(test_image, axis=0)
+        prediction = length_model.predict(test_image, verbose=0)
+        return 1 if prediction[0][0] > 0.5 else 0
+    except Exception as e:
+        print(e)
+        pass
+
+def predict_all(test_img):
+    predictions = {}
+    # test_img = np.expand_dims(test_img, axis=0)
+    brand = predict_brand(test_img)
+    for i in range(len(brand_list)):
+        predictions[f"品牌 Brand_{i}"] = 1 if brand == i else 0
+    # predictions["brand"] = brand
+    for i in range(len(feature_list)):
+        feature = feature_list[i]
+        pred = predict_one_feature(test_img, i)
+        predictions[feature] = pred
+    # print("predictions:", predictions)
+    predictions_df = pd.DataFrame([predictions])
+    predictions_df = predictions_df[sorted(predictions_df.columns)]
+    return predictions_df
+
+def predict_price(classify_res, model_type="rf"):
+    if model_type == "nn":
+        price = nn_model.predict(classify_res, verbose=0)
+    else:
+        price = rf_model.predict(classify_res)
+    return price
