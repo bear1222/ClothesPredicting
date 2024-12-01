@@ -20,8 +20,11 @@ for i in range(len(feature_list)):
     try:
         feature_model[i] = load_model(os.path.join(model_dir, f"model_feature_{i}_0.keras"))
     except Exception as e:
-        print(f"please add model_feature_{i}_0.keras to the models folder")
-        pass
+        try:
+            feature_model[i] = load_model(os.path.join(model_dir, f"model_feature_{i}_1.keras"))
+        except Exception as e:
+            print(f"please add model_feature_{i}_0/1.keras to the models folder")
+            pass
 
 try:
     brand_model = load_model(os.path.join(model_dir, f"model_brand_0.keras"))

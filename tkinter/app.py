@@ -33,7 +33,7 @@ def predict_price_action():
     img = predict.load_and_preprocess_image(image_path)
     # plt.imshow(img)
     pred = predict.predict_all(img)
-    price = int(predict.predict_price(pred, model_type)[0]/100)
+    price = int(predict.predict_price(pred, model_type)/100)
     # price_nn = int(predict.predict_price(pred, "nn")/100)
     # price_rf = int(predict.predict_price(pred, "rf")/100)
     
@@ -88,32 +88,46 @@ image_label = Label(image_frame, bg="#e0e0e0", text="No image", font=("Helvetica
 image_label.place(relx=0.5, rely=0.5, anchor="center")
 
 output_frame = Frame(root, bg="#f4f4f9")
-output_frame.grid(row=1, column=1, pady=10, sticky="s")
+output_frame.grid(row=1, column=1, sticky="s")
 output_frame.grid_propagate(False)
 output_frame.config(width=400, height=120)
+
+button_frame = Frame(output_frame, bg="#f4f4f9")
+button_frame.grid(row=1, column=0)
+button_frame.grid_propagate(False)
+button_frame.config(width=400, height=60)
  # middle of frame
 button = Button(
-    output_frame, text="Upload", command=upload_image,
+    button_frame, text="Upload", command=upload_image,
     width=20, bg="#4a90e2", fg="white", font=("Helvetica", 12, "bold"), relief="raised"
 )
-button.grid(row=1, column=0, padx=(50, 10), pady=10)
+button.grid(row=0, column=0, padx=(80, 10), pady=10)
 
 model_button = Button(
-    output_frame, text="NN", command=switch_model,
+    button_frame, text="NN", command=switch_model,
     width=3, bg="black", fg="white", font=("Helvetica", 8, "bold"), relief="raised"
 )
-model_button.grid(row=1, column=1, padx=10, pady=10)
+model_button.grid(row=0, column=1, pady=10)
+
+price_frame = Frame(output_frame, bg="#f4f4f9")
+price_frame.grid(row=0, column=0)
+price_frame.grid_propagate(False)
+price_frame.config(width=400, height=60)
+
+# Configure column weights to control resizing
+price_frame.columnconfigure(0, weight=1)  # Left side has no growth
+price_frame.columnconfigure(1, weight=0)  # Right side stays fixed
 
 price_text_label = Label(
-    output_frame, text="Predicted Price:", font=("Helvetica", 16, "bold"),
-    bg="#f4f4f9", fg="#333333", anchor="sw"
+    price_frame, text="Predicted Price:", font=("Helvetica", 16, "bold"),
+    bg="#f4f4f9", fg="#333333"
 )
-price_text_label.grid(row=0, column=0, padx=20, pady=20, sticky="w")
+price_text_label.grid(row=0, column=0, padx=10, pady=20, sticky="w")
 
 price_label = Label(
-    output_frame, text="$0", font=("Helvetica", 16, "bold"),
-    bg="#f4f4f9", fg="#333333", anchor="se"
+    price_frame, text="$0", font=("Helvetica", 16, "bold"),
+    bg="#f4f4f9", fg="#333333"
 )
-price_label.grid(row=0, column=1, padx=30, pady=20, sticky="e")
+price_label.grid(row=0, column=1, padx=20, pady=20, sticky="e")
 
 root.mainloop()
