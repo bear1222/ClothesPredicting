@@ -99,8 +99,8 @@ def predict_all(test_img):
     predictions_df = predictions_df[sorted(predictions_df.columns)]
     return predictions_df
 
-def predict_price(classify_res, model_type="rf"):
-    if model_type == "nn":
+def predict_price(classify_res, model_type="RF"):
+    if model_type == "NN":
         price = nn_model.predict(classify_res, verbose=0)
     else:
         price = rf_model.predict(classify_res)

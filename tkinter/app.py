@@ -11,6 +11,12 @@ def reset_state():
     price_label.config(text="$0")
     button.config(text="Upload", bg="#4a90e2", command=upload_image, state="normal")  # Change to upload button
 
+def switch_model():
+    """Switch the model type between 'nn' and 'rf'."""
+    current_model = model_button.config('text')[-1]
+    new_model = "RF" if current_model == "NN" else "NN"
+    model_button.config(text=new_model)
+
 def predict_price_action():
     """Perform prediction and update the UI with results."""
     # Disable the button while predicting
@@ -20,15 +26,19 @@ def predict_price_action():
     # Get the file path from the image label
     image_path = image_label.image_path
     
+    # Get the model type from the button if not provided
+    model_type = model_button.config('text')[-1]
+    
     # Call the prediction function from predict.py
     img = predict.load_and_preprocess_image(image_path)
     # plt.imshow(img)
     pred = predict.predict_all(img)
-    price_nn = int(predict.predict_price(pred, "nn")/100)
+    price = int(predict.predict_price(pred, model_type)[0]/100)
+    # price_nn = int(predict.predict_price(pred, "nn")/100)
     # price_rf = int(predict.predict_price(pred, "rf")/100)
     
     # Display the predicted price
-    price_label.config(text=f"${price_nn}00~{price_nn+1}00")
+    price_label.config(text=f"${price}00~{price+1}00")
     # price_label.config(text=f"${price_nn} (NN) / ${price_rf} (RF)")
 
     # Enable the "Next" button after prediction
@@ -86,7 +96,13 @@ button = Button(
     output_frame, text="Upload", command=upload_image,
     width=20, bg="#4a90e2", fg="white", font=("Helvetica", 12, "bold"), relief="raised"
 )
-button.grid(row=1, column=0, columnspan=2, padx=100, pady=10)
+button.grid(row=1, column=0, padx=(50, 10), pady=10)
+
+model_button = Button(
+    output_frame, text="NN", command=switch_model,
+    width=3, bg="black", fg="white", font=("Helvetica", 8, "bold"), relief="raised"
+)
+model_button.grid(row=1, column=1, padx=10, pady=10)
 
 price_text_label = Label(
     output_frame, text="Predicted Price:", font=("Helvetica", 16, "bold"),
