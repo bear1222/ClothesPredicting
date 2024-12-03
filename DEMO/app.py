@@ -115,3 +115,5 @@ price_label = Label(
     bg="#f4f4f9", fg="#333333"
 )
 price_label.grid(row=0, column=1, padx=20, pady=20, sticky="e")
+
+root.mainloop()
