@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 from tkinter import Label, Button, Frame
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageOps
 import predict
 
 def reset_state():
@@ -43,6 +43,14 @@ def upload_image():
         return
 
     img = Image.open(file_path)
+
+    # Correct image orientation based on EXIF data
+    try:
+        img = ImageOps.exif_transpose(img)
+    except AttributeError:
+        # If the image has no EXIF data, do nothing
+        pass
+
     img.thumbnail((350, 350))
     img_tk = ImageTk.PhotoImage(img)
     image_label.config(image=img_tk, text="")
